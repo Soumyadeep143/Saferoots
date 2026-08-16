@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Globe, Map, BookOpen, Trophy, ArrowRight, Shield } from 'lucide-react';
 import QuizGame from './QuizGame';
-import DomainQuizGame from './DomainQuizGame';
 import FactCheckingMap from './FactCheckingMap';
 import MediaDecoder from './MediaDecoder';
 import VerifyBeforeTrust from './VerifyBeforeTrust';
@@ -48,7 +47,6 @@ export default function SafeRootsApp() {
             {[
               { id: 'home', label: '🏠 Home' },
               { id: 'quiz', label: '🎮 Quiz' },
-              { id: 'domain-quiz', label: '🌍 Domains' },
               { id: 'verify', label: '🔍 Verify' },
               { id: 'map', label: '🗺️ Map' },
               { id: 'media', label: '📰 Media' },
@@ -69,17 +67,6 @@ export default function SafeRootsApp() {
       <main className="pixel-content">
         {activeTab === 'home' && <HomePage onNavigate={setActiveTab} badges={badges} />}
         {activeTab === 'quiz' && <QuizGame onStatsUpdate={setQuizStats} />}
-        {activeTab === 'domain-quiz' && (
-          <DomainQuizGame
-            onStatsUpdate={setQuizStats}
-            onBadgeEarned={(badge) => {
-              setShowBadgeNotif(badge);
-              const savedBadges = localStorage.getItem('saferoots-badges');
-              setBadges(JSON.parse(savedBadges || '{}'));
-              setTimeout(() => setShowBadgeNotif(null), 3000);
-            }}
-          />
-        )}
         {activeTab === 'verify' && <VerifyBeforeTrust />}
         {activeTab === 'map' && <FactCheckingMap />}
         {activeTab === 'media' && <MediaDecoder />}
@@ -252,7 +239,7 @@ function HomePage({ onNavigate, badges }) {
       )}
 
       {/* CTA Section */}
-      <div className="pixel-grid pixel-grid-2">
+      <div className="pixel-grid pixel-grid-3">
         <div>
           <button
             onClick={() => onNavigate('quiz')}
@@ -270,28 +257,7 @@ function HomePage({ onNavigate, badges }) {
             }}
           >
             <div style={{fontSize: '32px', marginBottom: '8px'}}>🎮</div>
-            CLASSIC QUIZ
-          </button>
-        </div>
-        <div>
-          <button
-            onClick={() => onNavigate('domain-quiz')}
-            className="pixel-btn"
-            style={{
-              background: 'var(--pixel-purple)',
-              color: 'var(--pixel-white)',
-              width: '100%',
-              height: '120px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              cursor: 'pointer'
-            }}
-          >
-            <div style={{fontSize: '32px', marginBottom: '8px'}}>🌍</div>
-            DOMAIN QUIZ
+            TRAINING QUIZ
           </button>
         </div>
         <div>

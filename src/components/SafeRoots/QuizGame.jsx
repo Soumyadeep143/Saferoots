@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, Award, Zap, AlertCircle, CheckCircle, Eye } from 'lucide-react';
+import {
+  DOMAINS,
+  LOCATIONS,
+  QUIZ_SCENARIOS_PHASE2,
+  getDomainsForLocation,
+  getLocationName,
+  getDomainInfo,
+} from './quizDataPhase2';
 
-const QUIZ_SCENARIOS = [
+const CLASSIC_QUIZ_SCENARIOS = [
   {
     id: 1,
     city: 'Bangalore',
@@ -134,19 +142,41 @@ const QUIZ_SCENARIOS = [
 ];
 
 export default function QuizGame({ onStatsUpdate }) {
+  const [quizMode, setQuizMode] = useState('mode-select'); // 'mode-select', 'classic', 'domain-select', 'domain-quiz'
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [selectedDomain, setSelectedDomain] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [userAnswer, setUserAnswer] = useState(null);
   const [stats, setStats] = useState({ total: 0, correct: 0, streak: 0 });
   const [showExplanation, setShowExplanation] = useState(false);
   const [history, setHistory] = useState([]);
+  const [domainProgress, setDomainProgress] = useState({});
+  const [badges, setBadges] = useState({});
 
-  const current = QUIZ_SCENARIOS[currentIndex];
-  const isCorrect = userAnswer === current.isSafe;
+  useEffect(() => {
+    const savedBadges = localStorage.getItem('saferoots-badges');
+    if (savedBadges) {
+      setBadges(JSON.parse(savedBadges));
+    }
+    const savedProgress = localStorage.getItem('saferoots-domain-progress');
+    if (savedProgress) {
+      setDomainProgress(JSON.parse(savedProgress));
+    }
+  }, []);
 
   useEffect(() => {
     onStatsUpdate(stats);
   }, [stats, onStatsUpdate]);
+
+  const scenarios = quizMode === 'classic'
+    ? CLASSIC_QUIZ_SCENARIOS
+    : selectedLocation && selectedDomain
+    ? QUIZ_SCENARIOS_PHASE2[selectedLocation]?.[selectedDomain] || []
+    : [];
+
+  const current = scenarios[currentIndex];
+  const isCorrect = current && userAnswer === current.isSafe;
 
   const handleAnswer = (answer) => {
     if (answered) return;
@@ -164,18 +194,243 @@ export default function QuizGame({ onStatsUpdate }) {
     }
 
     setStats(newStats);
+
+    if (quizMode === 'domain-quiz') {
+      const progressKey = `${selectedLocation}-${selectedDomain}`;
+      const newProgress = { ...domainProgress };
+      if (!newProgress[progressKey]) {
+        newProgress[progressKey] = { completed: 0, correct: 0 };
+      }
+      newProgress[progressKey].completed = (newProgress[progressKey].completed || 0) + 1;
+      if (isCorrect) {
+        newProgress[progressKey].correct = (newProgress[progressKey].correct || 0) + 1;
+      }
+      setDomainProgress(newProgress);
+      localStorage.setItem('saferoots-domain-progress', JSON.stringify(newProgress));
+
+      if (newProgress[progressKey].completed % 3 === 0) {
+        const badgeKey = `${selectedLocation}-${selectedDomain}`;
+        if (!badges[badgeKey]) {
+          const newBadges = { ...badges, [badgeKey]: true };
+          setBadges(newBadges);
+          localStorage.setItem('saferoots-badges', JSON.stringify(newBadges));
+        }
+      }
+    }
+
     setHistory([...history, { scenario: current, userAnswer: answer, correct: answer === current.isSafe }]);
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % QUIZ_SCENARIOS.length);
+    setCurrentIndex((prev) => (prev + 1) % scenarios.length);
     setAnswered(false);
     setUserAnswer(null);
     setShowExplanation(false);
   };
 
+  const domainsList = selectedLocation ? getDomainsForLocation(selectedLocation) : [];
+
+  // MODE SELECT
+  if (quizMode === 'mode-select') {
+    return (
+      <div style={{ display: 'grid', gap: '16px' }}>
+        <div className="pixel-section pixel-section-grass">
+          <div className="pixel-h2" style={{ color: 'var(--pixel-black)', textAlign: 'center', marginBottom: '12px' }}>
+            🎮 SELECT QUIZ TYPE 🎮
+          </div>
+          <div className="pixel-text" style={{ color: 'var(--pixel-black)', textAlign: 'center', marginBottom: '16px' }}>
+            Choose how you want to train your trust skills
+          </div>
+          <div className="pixel-grid pixel-grid-2">
+            <button
+              onClick={() => setQuizMode('classic')}
+              className="pixel-btn"
+              style={{
+                background: 'var(--pixel-blue)',
+                color: 'var(--pixel-white)',
+                padding: '20px',
+                minHeight: '150px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{fontSize: '40px', marginBottom: '12px'}}>🎮</div>
+              <div style={{fontWeight: 'bold', marginBottom: '8px'}}>CLASSIC QUIZ</div>
+              <div style={{fontSize: '8px', opacity: 0.9}}>8 random scenarios from multiple cities</div>
+            </button>
+            <button
+              onClick={() => setQuizMode('domain-select')}
+              className="pixel-btn"
+              style={{
+                background: 'var(--pixel-purple)',
+                color: 'var(--pixel-white)',
+                padding: '20px',
+                minHeight: '150px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{fontSize: '40px', marginBottom: '12px'}}>🌍</div>
+              <div style={{fontWeight: 'bold', marginBottom: '8px'}}>DOMAIN QUIZ</div>
+              <div style={{fontSize: '8px', opacity: 0.9}}>Skill training by location & domain</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // DOMAIN SELECT (Choose location & domain)
+  if (quizMode === 'domain-select') {
+    return (
+      <div style={{ display: 'grid', gap: '16px' }}>
+        <button
+          onClick={() => setQuizMode('mode-select')}
+          className="pixel-btn"
+          style={{
+            background: 'var(--pixel-red)',
+            color: 'var(--pixel-white)',
+            width: '100%',
+            padding: '8px',
+            fontSize: '9px',
+            marginBottom: '8px'
+          }}
+        >
+          ← BACK TO QUIZ TYPE
+        </button>
+
+        <div className="pixel-section pixel-section-grass">
+          <div className="pixel-h2" style={{ color: 'var(--pixel-black)', textAlign: 'center', marginBottom: '12px' }}>
+            🌍 SELECT YOUR LOCATION 🌍
+          </div>
+          <div className="pixel-grid pixel-grid-4">
+            {LOCATIONS.map((loc) => (
+              <button
+                key={loc.id}
+                onClick={() => setSelectedLocation(loc.id)}
+                className="pixel-btn"
+                style={{
+                  background: selectedLocation === loc.id ? 'var(--pixel-yellow)' : 'var(--pixel-grass)',
+                  color: 'var(--pixel-black)',
+                  padding: '12px',
+                  minHeight: '80px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ fontSize: '28px', marginBottom: '4px' }}>📍</div>
+                <div className="pixel-text" style={{ color: 'var(--pixel-black)', fontWeight: 'bold', fontSize: '9px' }}>
+                  {loc.name}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {selectedLocation && (
+          <div className="pixel-section pixel-section-stone">
+            <div className="pixel-h2" style={{ color: 'var(--pixel-yellow)', textAlign: 'center', marginBottom: '12px' }}>
+              📚 SELECT DOMAIN FOR {getLocationName(selectedLocation).toUpperCase()} 📚
+            </div>
+            <div className="pixel-grid pixel-grid-3">
+              {domainsList.map((domainId) => {
+                const domain = getDomainInfo(domainId);
+                const progressKey = `${selectedLocation}-${domainId}`;
+                const progress = domainProgress[progressKey];
+                const isBadgeEarned = badges[progressKey];
+
+                return (
+                  <button
+                    key={domainId}
+                    onClick={() => {
+                      setSelectedDomain(domainId);
+                      setQuizMode('domain-quiz');
+                      setCurrentIndex(0);
+                      setAnswered(false);
+                      setUserAnswer(null);
+                    }}
+                    className="pixel-btn"
+                    style={{
+                      background: 'var(--pixel-blue)',
+                      color: 'var(--pixel-white)',
+                      padding: '12px',
+                      minHeight: '120px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      position: 'relative',
+                    }}
+                  >
+                    {isBadgeEarned && (
+                      <div style={{ position: 'absolute', top: '4px', right: '4px', fontSize: '20px', animation: 'pixel-bounce 400ms steps(2) infinite' }}>
+                        ✨
+                      </div>
+                    )}
+                    <div style={{ fontSize: '28px', marginBottom: '4px' }}>{domain.emoji}</div>
+                    <div className="pixel-text" style={{ color: 'var(--pixel-white)', fontWeight: 'bold', fontSize: '9px', textAlign: 'center' }}>
+                      {domain.name}
+                    </div>
+                    {progress ? (
+                      <div style={{ marginTop: '6px', width: '100%', textAlign: 'center' }}>
+                        <div className="pixel-text" style={{ color: 'var(--pixel-yellow)', fontSize: '8px', marginBottom: '2px', fontWeight: 'bold' }}>
+                          {progress.completed}/3
+                        </div>
+                        {!isBadgeEarned && (
+                          <div className="pixel-text" style={{ color: 'var(--pixel-orange)', fontSize: '7px' }}>
+                            ⏳ IN PROGRESS
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="pixel-text" style={{ color: 'var(--pixel-white)', fontSize: '7px', marginTop: '6px' }}>
+                        🔓 UNLOCKED
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // CLASSIC OR DOMAIN QUIZ MODE
   return (
-    <div style={{display: 'grid', gap: '16px'}}>
+    <div style={{ display: 'grid', gap: '16px' }}>
+      {/* Back Button */}
+      <button
+        onClick={() => {
+          setQuizMode('mode-select');
+          setSelectedLocation(null);
+          setSelectedDomain(null);
+        }}
+        className="pixel-btn"
+        style={{
+          background: 'var(--pixel-red)',
+          color: 'var(--pixel-white)',
+          width: '100%',
+          padding: '8px',
+          fontSize: '9px',
+        }}
+      >
+        ← BACK
+      </button>
+
       {/* Progress Bar */}
       <div className="pixel-grid pixel-grid-3">
         <div className="pixel-stat">
@@ -199,7 +454,7 @@ export default function QuizGame({ onStatsUpdate }) {
         <div className="pixel-stat">
           <div className="pixel-stat-label">QUIZ</div>
           <div className="pixel-stat-value">
-            {currentIndex + 1}/{QUIZ_SCENARIOS.length}
+            {currentIndex + 1}/{scenarios.length}
           </div>
           <div className="pixel-text" style={{color: 'var(--pixel-blue)', marginTop: '4px'}}>
             SCENARIOS
@@ -209,10 +464,22 @@ export default function QuizGame({ onStatsUpdate }) {
 
       {/* Quiz Card */}
       <div className="pixel-section pixel-section-grass">
-        {/* City Badge */}
-        <div className="pixel-level" style={{marginBottom: '12px', display: 'inline-block', background: 'var(--pixel-blue)', color: 'var(--pixel-white)'}}>
-          📍 {current.city}
-        </div>
+        {/* Context Badge */}
+        {quizMode === 'domain-quiz' && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <div className="pixel-level" style={{ background: 'var(--pixel-blue)', color: 'var(--pixel-white)' }}>
+              📍 {getLocationName(selectedLocation)}
+            </div>
+            <div className="pixel-level" style={{ background: 'var(--pixel-purple)', color: 'var(--pixel-white)' }}>
+              {getDomainInfo(selectedDomain)?.emoji} {getDomainInfo(selectedDomain)?.name}
+            </div>
+          </div>
+        )}
+        {quizMode === 'classic' && (
+          <div className="pixel-level" style={{ marginBottom: '12px', display: 'inline-block', background: 'var(--pixel-blue)', color: 'var(--pixel-white)' }}>
+            📍 {current?.city}
+          </div>
+        )}
 
         {/* Scenario */}
         <div style={{marginBottom: '12px'}}>
@@ -220,7 +487,7 @@ export default function QuizGame({ onStatsUpdate }) {
             🤔 WHAT DO YOU THINK?
           </div>
           <div className="pixel-text" style={{color: 'var(--pixel-black)', lineHeight: '1.6', marginBottom: '8px'}}>
-            {current.scenario}
+            {current?.scenario}
           </div>
         </div>
 
@@ -258,7 +525,6 @@ export default function QuizGame({ onStatsUpdate }) {
               alignItems: 'center',
               justifyContent: 'center',
               opacity: !answered ? 1 : userAnswer === true ? (isCorrect ? 1 : 0.6) : 0.4,
-              background: userAnswer === true && isCorrect ? 'var(--pixel-green)' : 'var(--pixel-green)'
             }}
           >
             <div style={{fontSize: '24px', marginBottom: '4px'}}>✓</div>
@@ -275,7 +541,7 @@ export default function QuizGame({ onStatsUpdate }) {
             style={{
               marginBottom: '12px',
               background: isCorrect ? 'var(--pixel-grass)' : 'var(--pixel-sand)',
-              color: isCorrect ? 'var(--pixel-black)' : 'var(--pixel-black)'
+              color: 'var(--pixel-black)'
             }}
           >
             <div style={{marginBottom: '8px'}}>
@@ -290,11 +556,11 @@ export default function QuizGame({ onStatsUpdate }) {
               )}
             </div>
             <div className="pixel-text" style={{color: 'var(--pixel-black)', marginBottom: '8px', lineHeight: '1.6'}}>
-              {current.explanation}
+              {current?.explanation}
             </div>
 
             {/* Trust Signals Analysis */}
-            {current.signals && (
+            {current?.signals && (
               <div style={{marginBottom: '8px'}}>
                 <div className="pixel-text" style={{color: 'var(--pixel-black)', fontWeight: 'bold', marginBottom: '4px', fontSize: '10px'}}>
                   👁️ TRUST SIGNALS:
@@ -320,7 +586,7 @@ export default function QuizGame({ onStatsUpdate }) {
                 ⚡ VERIFICATION STEPS:
               </div>
               <ul style={{paddingLeft: '0', margin: '0'}}>
-                {current.tips.map((tip, i) => (
+                {current?.tips.map((tip, i) => (
                   <li key={i} className="pixel-text" style={{color: 'var(--pixel-black)', fontSize: '8px', marginBottom: '2px', listStyle: 'none'}}>
                     → {tip}
                   </li>
