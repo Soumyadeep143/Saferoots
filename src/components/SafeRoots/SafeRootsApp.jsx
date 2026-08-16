@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Globe, Map, BookOpen, Trophy, ArrowRight, Shield } from 'lucide-react';
 import QuizGame from './QuizGame';
+import DomainQuizGame from './DomainQuizGame';
 import FactCheckingMap from './FactCheckingMap';
 import MediaDecoder from './MediaDecoder';
-import VerifyBeforeTrust from './VerifyBeforeTrust';
 import './SafeRoots-Pixelated.css';
 
 export default function SafeRootsApp() {
@@ -47,7 +47,7 @@ export default function SafeRootsApp() {
             {[
               { id: 'home', label: '🏠 Home' },
               { id: 'quiz', label: '🎮 Quiz' },
-              { id: 'verify', label: '🔍 Verify' },
+              { id: 'domain-quiz', label: '🌍 Domains' },
               { id: 'map', label: '🗺️ Map' },
               { id: 'media', label: '📰 Media' },
             ].map(({ id, label }) => (
@@ -67,7 +67,17 @@ export default function SafeRootsApp() {
       <main className="pixel-content">
         {activeTab === 'home' && <HomePage onNavigate={setActiveTab} badges={badges} />}
         {activeTab === 'quiz' && <QuizGame onStatsUpdate={setQuizStats} />}
-        {activeTab === 'verify' && <VerifyBeforeTrust />}
+        {activeTab === 'domain-quiz' && (
+          <DomainQuizGame
+            onStatsUpdate={setQuizStats}
+            onBadgeEarned={(badge) => {
+              setShowBadgeNotif(badge);
+              const savedBadges = localStorage.getItem('saferoots-badges');
+              setBadges(JSON.parse(savedBadges || '{}'));
+              setTimeout(() => setShowBadgeNotif(null), 3000);
+            }}
+          />
+        )}
         {activeTab === 'map' && <FactCheckingMap />}
         {activeTab === 'media' && <MediaDecoder />}
       </main>
@@ -133,19 +143,19 @@ function HomePage({ onNavigate, badges }) {
       {/* Hero Section */}
       <div className="pixel-section pixel-section-grass">
         <div style={{textAlign: 'center', marginBottom: '16px'}}>
-          <div className="pixel-h1" style={{color: 'var(--pixel-black)', marginBottom: '8px'}}>
+          <div className="pixel-h1 pixel-text-glow" style={{color: 'var(--pixel-black)', marginBottom: '8px'}}>
             🎮 WELCOME TO 🎮
           </div>
-          <div className="pixel-h1" style={{color: 'var(--pixel-green)', textShadow: '3px 3px 0px rgba(0,0,0,0.5)'}}>
+          <div className="pixel-h1 pixel-text-rainbow" style={{color: 'var(--pixel-green)', textShadow: '3px 3px 0px rgba(0,0,0,0.5)'}}>
             SAFE ROOTS
           </div>
         </div>
 
-        <div className="pixel-text" style={{color: 'var(--pixel-black)', textAlign: 'center', marginBottom: '12px', lineHeight: '1.6'}}>
+        <div className="pixel-text pixel-text-animate" style={{color: 'var(--pixel-black)', textAlign: 'center', marginBottom: '12px', lineHeight: '1.6', animationDelay: '0.2s'}}>
           YOUR GUIDE TO SURVIVING IN A NEW CITY
         </div>
 
-        <div className="pixel-text" style={{color: 'var(--pixel-black)', textAlign: 'center', lineHeight: '1.6'}}>
+        <div className="pixel-text pixel-text-wave" style={{color: 'var(--pixel-black)', textAlign: 'center', lineHeight: '1.6'}}>
           Moving to a new city? Overwhelmed by scams, fake info, and culture shock?
           <br/>Learn how to recognize what's SAFE and what's SCAM! 🛡️
         </div>
@@ -153,7 +163,7 @@ function HomePage({ onNavigate, badges }) {
         <div className="pixel-grid pixel-grid-2">
           <div className="pixel-card pixel-fade-in">
             <div style={{fontSize: '32px', marginBottom: '8px'}}>🎮</div>
-            <div className="pixel-h3" style={{color: 'var(--pixel-black)'}}>LEARN BY PLAYING</div>
+            <div className="pixel-h3 pixel-text-animate" style={{color: 'var(--pixel-black)', animationDelay: '0.3s'}}>LEARN BY PLAYING</div>
             <div className="pixel-text" style={{color: 'var(--pixel-black)', marginTop: '6px'}}>
               Answer quizzes about REAL scams in YOUR city!
             </div>
@@ -161,7 +171,7 @@ function HomePage({ onNavigate, badges }) {
 
           <div className="pixel-card pixel-fade-in">
             <div style={{fontSize: '32px', marginBottom: '8px'}}>🗺️</div>
-            <div className="pixel-h3" style={{color: 'var(--pixel-black)'}}>COMMUNITY MAP</div>
+            <div className="pixel-h3 pixel-text-animate" style={{color: 'var(--pixel-black)', animationDelay: '0.4s'}}>COMMUNITY MAP</div>
             <div className="pixel-text" style={{color: 'var(--pixel-black)', marginTop: '6px'}}>
               See where others reported SCAMS and SAFE zones!
             </div>
@@ -169,7 +179,7 @@ function HomePage({ onNavigate, badges }) {
 
           <div className="pixel-card pixel-fade-in">
             <div style={{fontSize: '32px', marginBottom: '8px'}}>📰</div>
-            <div className="pixel-h3" style={{color: 'var(--pixel-black)'}}>MEDIA DECODER</div>
+            <div className="pixel-h3 pixel-text-animate" style={{color: 'var(--pixel-black)', animationDelay: '0.5s'}}>MEDIA DECODER</div>
             <div className="pixel-text" style={{color: 'var(--pixel-black)', marginTop: '6px'}}>
               Understand NEWS BIAS and who controls media!
             </div>
@@ -177,7 +187,7 @@ function HomePage({ onNavigate, badges }) {
 
           <div className="pixel-card pixel-fade-in">
             <div style={{fontSize: '32px', marginBottom: '8px'}}>🛡️</div>
-            <div className="pixel-h3" style={{color: 'var(--pixel-black)'}}>STAY SAFE</div>
+            <div className="pixel-h3 pixel-text-animate" style={{color: 'var(--pixel-black)', animationDelay: '0.6s'}}>STAY SAFE</div>
             <div className="pixel-text" style={{color: 'var(--pixel-black)', marginTop: '6px'}}>
               Tips from locals and expats who know the REAL risks!
             </div>
@@ -186,10 +196,10 @@ function HomePage({ onNavigate, badges }) {
 
       {/* Core Mission */}
       <div className="pixel-section pixel-section-stone">
-        <div className="pixel-h2" style={{color: 'var(--pixel-yellow)', marginBottom: '12px', textAlign: 'center'}}>
+        <div className="pixel-h2 pixel-text-glow" style={{color: 'var(--pixel-yellow)', marginBottom: '12px', textAlign: 'center'}}>
           🎯 CALIBRATED TRUST 🎯
         </div>
-        <div className="pixel-text" style={{color: 'var(--pixel-white)', marginBottom: '12px', textAlign: 'center', lineHeight: '1.6'}}>
+        <div className="pixel-text pixel-text-animate" style={{color: 'var(--pixel-white)', marginBottom: '12px', textAlign: 'center', lineHeight: '1.6', animationDelay: '0.3s'}}>
           SafeRoots doesn't tell you what to BELIEVE
           <br/>It teaches you HOW to know what's TRUSTWORTHY!
         </div>
@@ -216,7 +226,7 @@ function HomePage({ onNavigate, badges }) {
       {/* Badges Earned Section */}
       {Object.keys(badges || {}).length > 0 && (
         <div className="pixel-section pixel-section-stone">
-          <div className="pixel-h2" style={{color: 'var(--pixel-yellow)', marginBottom: '12px', textAlign: 'center'}}>
+          <div className="pixel-h2 pixel-text-rainbow" style={{color: 'var(--pixel-yellow)', marginBottom: '12px', textAlign: 'center'}}>
             🏆 YOUR BADGES 🏆
           </div>
           <div className="pixel-grid pixel-grid-4">
@@ -257,16 +267,16 @@ function HomePage({ onNavigate, badges }) {
             }}
           >
             <div style={{fontSize: '32px', marginBottom: '8px'}}>🎮</div>
-            TRAINING QUIZ
+            CLASSIC QUIZ
           </button>
         </div>
         <div>
           <button
-            onClick={() => onNavigate('verify')}
+            onClick={() => onNavigate('domain-quiz')}
             className="pixel-btn"
             style={{
-              background: 'var(--pixel-orange)',
-              color: 'var(--pixel-black)',
+              background: 'var(--pixel-purple)',
+              color: 'var(--pixel-white)',
               width: '100%',
               height: '120px',
               display: 'flex',
@@ -277,8 +287,8 @@ function HomePage({ onNavigate, badges }) {
               cursor: 'pointer'
             }}
           >
-            <div style={{fontSize: '32px', marginBottom: '8px'}}>🔍</div>
-            VERIFY TEXT
+            <div style={{fontSize: '32px', marginBottom: '8px'}}>🌍</div>
+            DOMAIN QUIZ
           </button>
         </div>
         <div>
@@ -306,7 +316,7 @@ function HomePage({ onNavigate, badges }) {
 
       {/* Digital Resident Progression */}
       <div>
-        <div className="pixel-h2" style={{color: 'var(--pixel-yellow)', textAlign: 'center', marginBottom: '12px'}}>
+        <div className="pixel-h2 pixel-text-glow" style={{color: 'var(--pixel-yellow)', textAlign: 'center', marginBottom: '12px'}}>
           🏆 LEVEL UP 🏆
         </div>
         <div className="pixel-grid pixel-grid-4">
