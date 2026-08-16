@@ -4,6 +4,7 @@ import QuizGame from './QuizGame';
 import DomainQuizGame from './DomainQuizGame';
 import FactCheckingMap from './FactCheckingMap';
 import MediaDecoder from './MediaDecoder';
+import VerifyBeforeTrust from './VerifyBeforeTrust';
 import './SafeRoots-Pixelated.css';
 
 export default function SafeRootsApp() {
@@ -48,6 +49,7 @@ export default function SafeRootsApp() {
               { id: 'home', label: '🏠 Home' },
               { id: 'quiz', label: '🎮 Quiz' },
               { id: 'domain-quiz', label: '🌍 Domains' },
+              { id: 'verify', label: '🔍 Verify' },
               { id: 'map', label: '🗺️ Map' },
               { id: 'media', label: '📰 Media' },
             ].map(({ id, label }) => (
@@ -78,6 +80,7 @@ export default function SafeRootsApp() {
             }}
           />
         )}
+        {activeTab === 'verify' && <VerifyBeforeTrust />}
         {activeTab === 'map' && <FactCheckingMap />}
         {activeTab === 'media' && <MediaDecoder />}
       </main>
@@ -249,7 +252,7 @@ function HomePage({ onNavigate, badges }) {
       )}
 
       {/* CTA Section */}
-      <div className="pixel-grid pixel-grid-3">
+      <div className="pixel-grid pixel-grid-2">
         <div>
           <button
             onClick={() => onNavigate('quiz')}
@@ -289,6 +292,27 @@ function HomePage({ onNavigate, badges }) {
           >
             <div style={{fontSize: '32px', marginBottom: '8px'}}>🌍</div>
             DOMAIN QUIZ
+          </button>
+        </div>
+        <div>
+          <button
+            onClick={() => onNavigate('verify')}
+            className="pixel-btn"
+            style={{
+              background: 'var(--pixel-orange)',
+              color: 'var(--pixel-black)',
+              width: '100%',
+              height: '120px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{fontSize: '32px', marginBottom: '8px'}}>🔍</div>
+            VERIFY TEXT
           </button>
         </div>
         <div>
