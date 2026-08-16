@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, CheckCircle2, MapPin, Filter, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, MapPin, Filter, Info, Upload, X } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -184,12 +184,56 @@ const LOCATIONS = [
   },
 ];
 
+const CONTRIBUTION_TYPES = [
+  { id: 'trusted', label: 'Trusted Resource', emoji: '🟢', color: 'emerald' },
+  { id: 'insight', label: 'Local Insight', emoji: '🟡', color: 'yellow' },
+  { id: 'scam', label: 'Scam / Warning', emoji: '🔴', color: 'red' },
+  { id: 'info', label: 'Useful Information', emoji: '🔵', color: 'blue' },
+];
+
+const DOMAINS = [
+  'Housing & Rentals',
+  'Jobs & Employment',
+  'Payments & QR Codes',
+  'Government Services',
+  'Transportation',
+  'Local News & Media',
+  'Community Resources',
+  'Safety Alerts',
+  'Other',
+];
+
+const CITIES = [
+  'Bangalore, India',
+  'Mumbai, India',
+  'Delhi, India',
+  'Hyderabad, India',
+  'Dubai, UAE',
+  'Singapore',
+  'London, UK',
+  'Hong Kong',
+  'Bangkok, Thailand',
+];
+
 export default function FactCheckingMap() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const [filterType, setFilterType] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [stats, setStats] = useState({ scams: 0, safe: 0 });
+  const [contributions, setContributions] = useState([]);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    type: 'trusted',
+    location: '',
+    domain: '',
+    information: '',
+    source: '',
+    media: null,
+  });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     // Initialize map
@@ -218,6 +262,84 @@ export default function FactCheckingMap() {
   }, []);
 
   const filteredLocations = filterType === 'all' ? LOCATIONS : LOCATIONS.filter((l) => l.type === filterType);
+  const allLocations = [...LOCATIONS, ...contributions];
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        media: {
+          name: file.name,
+          type: file.type,
+        },
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.location) newErrors.location = 'Location is required';
+    if (!formData.domain) newErrors.domain = 'Domain is required';
+    if (!formData.information.trim()) newErrors.information = 'Please share your information';
+    if (!formData.source.trim()) newErrors.source = 'Source/evidence is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    // Add contribution to local list
+    const newContribution = {
+      id: LOCATIONS.length + contributions.length + 1,
+      lat: 0,
+      lng: 0,
+      city: formData.location,
+      title: formData.information.substring(0, 50) + (formData.information.length > 50 ? '...' : ''),
+      type: formData.type === 'scam' ? 'scam' : 'safe',
+      description: formData.information,
+      source: formData.source,
+      status: 'pending',
+      media: formData.media,
+      timestamp: new Date().toLocaleString(),
+      domain: formData.domain,
+    };
+
+    setContributions((prev) => [newContribution, ...prev]);
+    setShowSuccess(true);
+
+    // Reset form
+    setFormData({
+      type: 'trusted',
+      location: '',
+      domain: '',
+      information: '',
+      source: '',
+      media: null,
+    });
+
+    // Hide success message after 3 seconds
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const getContributionTypeColor = (type) => {
+    const typeObj = CONTRIBUTION_TYPES.find((t) => t.id === type);
+    return typeObj?.color || 'blue';
+  };
 
   return (
     <div className="space-y-6">
@@ -225,15 +347,15 @@ export default function FactCheckingMap() {
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl p-4 border border-blue-500/20">
           <div className="text-sm text-slate-400">Total Locations</div>
-          <div className="text-3xl font-bold text-blue-400">{LOCATIONS.length}</div>
+          <div className="text-3xl font-bold text-blue-400">{allLocations.length}</div>
         </div>
         <div className="bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-xl p-4 border border-red-500/30">
           <div className="text-sm text-red-300">Scam Reports</div>
-          <div className="text-3xl font-bold text-red-400">{stats.scams}</div>
+          <div className="text-3xl font-bold text-red-400">{stats.scams + contributions.filter((c) => c.type === 'scam').length}</div>
         </div>
         <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 rounded-xl p-4 border border-emerald-500/30">
           <div className="text-sm text-emerald-300">Trusted Resources</div>
-          <div className="text-3xl font-bold text-emerald-400">{stats.safe}</div>
+          <div className="text-3xl font-bold text-emerald-400">{stats.safe + contributions.filter((c) => c.type === 'safe').length}</div>
         </div>
       </div>
 
@@ -284,69 +406,10 @@ export default function FactCheckingMap() {
         />
       </div>
 
-      {/* Location Details & List */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Selected Location Details */}
-        {selectedLocation && (
-          <div className="md:col-span-1 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl p-6 border border-blue-500/30 sticky top-20 h-fit">
-            <div className="flex items-start gap-3 mb-4">
-              {selectedLocation.type === 'scam' ? (
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <AlertTriangle className="w-5 h-5 text-red-400" />
-                </div>
-              ) : (
-                <div className="p-2 bg-emerald-500/20 rounded-lg">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                </div>
-              )}
-              <div>
-                <h3 className="font-bold text-white">{selectedLocation.title}</h3>
-                <p className="text-xs text-slate-400">{selectedLocation.address}</p>
-              </div>
-            </div>
-
-            <p className="text-slate-300 mb-4">{selectedLocation.description}</p>
-
-            {selectedLocation.type === 'scam' && (
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Reports:</span>
-                  <span className="font-bold text-red-400">{selectedLocation.reports}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Severity:</span>
-                  <span
-                    className={`font-bold ${
-                      selectedLocation.severity === 'critical' ? 'text-red-500' : 'text-orange-400'
-                    }`}
-                  >
-                    {selectedLocation.severity.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {selectedLocation.type === 'safe' && (
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Rating:</span>
-                  <span className="font-bold text-emerald-400">⭐ {selectedLocation.rating}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Reviews:</span>
-                  <span className="font-bold text-emerald-400">{selectedLocation.reviews.toLocaleString()}</span>
-                </div>
-              </div>
-            )}
-
-            <button className="w-full px-4 py-2 bg-blue-500/30 hover:bg-blue-500/40 border border-blue-500/50 rounded-lg text-blue-300 font-medium transition-all text-sm">
-              Share Location
-            </button>
-          </div>
-        )}
-
-        {/* Locations List */}
-        <div className="md:col-span-2 space-y-3">
+      {/* All Locations & Contribution Form */}
+      <div className="grid md:grid-cols-5 gap-6">
+        {/* Left: Locations List (60%) - col-span-3 */}
+        <div className="md:col-span-3 space-y-3">
           <h3 className="font-bold text-white text-lg">
             {filterType === 'all' ? 'All Locations' : filterType === 'scam' ? 'Scam Alerts' : 'Trusted Resources'}{' '}
             ({filteredLocations.length})
@@ -377,20 +440,190 @@ export default function FactCheckingMap() {
                     <div className="flex gap-4 text-xs text-slate-500">
                       {loc.type === 'scam' ? (
                         <>
-                          <span>{loc.reports} reports</span>
-                          <span className="text-red-400 font-medium">{loc.severity}</span>
+                          <span>{loc.reports || 1} reports</span>
+                          <span className="text-red-400 font-medium">{loc.severity || 'warning'}</span>
                         </>
                       ) : (
                         <>
-                          <span>⭐ {loc.rating} rating</span>
-                          <span>{loc.reviews.toLocaleString()} reviews</span>
+                          <span>⭐ {loc.rating || 4.5} rating</span>
+                          <span>{(loc.reviews || 100).toLocaleString()} reviews</span>
                         </>
                       )}
                     </div>
+                    {loc.status === 'pending' && (
+                      <div className="mt-2 text-xs bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-2 py-1 rounded inline-block">
+                        ⏳ Pending Verification
+                      </div>
+                    )}
                   </div>
                 </div>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Right: Contribution Form (40%) - col-span-2 */}
+        <div className="md:col-span-2">
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl p-6 border border-cyan-500/30 sticky top-20 h-fit">
+            <h3 className="text-lg font-bold text-white mb-2">📍 Share Local Information</h3>
+            <p className="text-sm text-slate-400 mb-6">Help newcomers make informed decisions in your city.</p>
+
+            {showSuccess && (
+              <div className="mb-4 p-4 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
+                <h4 className="font-bold text-emerald-300 mb-1">✓ Contribution Received</h4>
+                <p className="text-sm text-emerald-200">Thank you for helping newcomers navigate their local information environment.</p>
+                <p className="text-xs text-emerald-300 mt-2">Your contribution will be reviewed before appearing on the community map.</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Contribution Type */}
+              <div>
+                <label className="text-xs font-semibold text-slate-300 mb-2 block">What are you sharing?</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {CONTRIBUTION_TYPES.map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          type: type.id,
+                        }))
+                      }
+                      className={`p-2 rounded-lg text-xs font-medium transition-all border ${
+                        formData.type === type.id
+                          ? `bg-${type.color}-500/20 border-${type.color}-500/50 text-${type.color}-300`
+                          : 'bg-slate-700/50 border-slate-600/50 text-slate-400 hover:bg-slate-700'
+                      }`}
+                    >
+                      {type.emoji} {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label htmlFor="location" className="text-xs font-semibold text-slate-300 mb-1 block">
+                  Location *
+                </label>
+                <select
+                  id="location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 text-sm ${
+                    errors.location ? 'border-red-500/50' : 'border-slate-600/50'
+                  }`}
+                >
+                  <option value="">Select a location</option>
+                  {CITIES.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+                {errors.location && <p className="text-xs text-red-400 mt-1">{errors.location}</p>}
+              </div>
+
+              {/* Domain / Issue */}
+              <div>
+                <label htmlFor="domain" className="text-xs font-semibold text-slate-300 mb-1 block">
+                  Domain / Issue *
+                </label>
+                <select
+                  id="domain"
+                  name="domain"
+                  value={formData.domain}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 text-sm ${
+                    errors.domain ? 'border-red-500/50' : 'border-slate-600/50'
+                  }`}
+                >
+                  <option value="">Select an issue</option>
+                  {DOMAINS.map((domain) => (
+                    <option key={domain} value={domain}>
+                      {domain}
+                    </option>
+                  ))}
+                </select>
+                {errors.domain && <p className="text-xs text-red-400 mt-1">{errors.domain}</p>}
+              </div>
+
+              {/* Information */}
+              <div>
+                <label htmlFor="information" className="text-xs font-semibold text-slate-300 mb-1 block">
+                  What would you like to share? *
+                </label>
+                <textarea
+                  id="information"
+                  name="information"
+                  value={formData.information}
+                  onChange={handleFormChange}
+                  placeholder="Share a fact, local insight, warning, trusted resource, or useful information for newcomers..."
+                  className={`w-full px-3 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 text-sm resize-none h-24 ${
+                    errors.information ? 'border-red-500/50' : 'border-slate-600/50'
+                  }`}
+                />
+                <p className="text-xs text-slate-500 mt-1">Keep your contribution factual and specific. Avoid sharing personal or sensitive information.</p>
+                {errors.information && <p className="text-xs text-red-400 mt-1">{errors.information}</p>}
+              </div>
+
+              {/* Source / Evidence */}
+              <div>
+                <label htmlFor="source" className="text-xs font-semibold text-slate-300 mb-1 block">
+                  Source / Evidence *
+                </label>
+                <input
+                  id="source"
+                  type="text"
+                  name="source"
+                  value={formData.source}
+                  onChange={handleFormChange}
+                  placeholder="Paste a website, official source, article, or other reference..."
+                  className={`w-full px-3 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 text-sm ${
+                    errors.source ? 'border-red-500/50' : 'border-slate-600/50'
+                  }`}
+                />
+                <p className="text-xs text-slate-500 mt-1">Providing a source helps the community evaluate the information.</p>
+                {errors.source && <p className="text-xs text-red-400 mt-1">{errors.source}</p>}
+              </div>
+
+              {/* Media Upload */}
+              <div>
+                <label className="text-xs font-semibold text-slate-300 mb-2 block">Supporting Media (Optional)</label>
+                <label className="block p-4 border-2 border-dashed border-slate-600/50 rounded-lg hover:border-cyan-500/50 cursor-pointer transition-all bg-slate-700/30 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="w-5 h-5 text-slate-400" />
+                    <span className="text-xs text-slate-400">Add supporting media</span>
+                    <span className="text-xs text-slate-500">Image or video (optional)</span>
+                    {formData.media && <span className="text-xs text-cyan-300">✓ {formData.media.name}</span>}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Trust Message */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                <p className="text-xs text-blue-200">
+                  <strong>Community trust starts with evidence.</strong> Contributions are reviewed and corroborated before being treated as verified information.
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold rounded-lg transition-all text-sm"
+              >
+                Share with Community
+              </button>
+            </form>
           </div>
         </div>
       </div>
