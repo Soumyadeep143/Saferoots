@@ -175,79 +175,95 @@ export default function QuizGame({ onStatsUpdate }) {
   };
 
   return (
-    <div className="space-y-8">
+    <div style={{display: 'grid', gap: '16px'}}>
       {/* Progress Bar */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl p-4 border border-blue-500/20">
-          <div className="text-sm text-slate-400">Score</div>
-          <div className="text-3xl font-bold text-emerald-400">
+      <div className="pixel-grid pixel-grid-3">
+        <div className="pixel-stat">
+          <div className="pixel-stat-label">SCORE</div>
+          <div className="pixel-stat-value">
             {stats.correct}/{stats.total}
           </div>
-          <div className="text-xs text-slate-500 mt-1">
-            {stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0}% Correct
+          <div className="pixel-text" style={{color: 'var(--pixel-green)', marginTop: '4px'}}>
+            {stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0}% ✓
           </div>
         </div>
-        <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl p-4 border border-blue-500/20">
-          <div className="text-sm text-slate-400">Streak</div>
-          <div className="text-3xl font-bold text-amber-400">{stats.streak}🔥</div>
-          <div className="text-xs text-slate-500 mt-1">Keep it going!</div>
+        <div className="pixel-stat">
+          <div className="pixel-stat-label">STREAK</div>
+          <div className="pixel-stat-value">
+            {stats.streak}
+          </div>
+          <div className="pixel-text" style={{color: 'var(--pixel-orange)', marginTop: '4px'}}>
+            🔥 KEEP GOING
+          </div>
         </div>
-        <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl p-4 border border-blue-500/20">
-          <div className="text-sm text-slate-400">Quiz #{currentIndex + 1}</div>
-          <div className="text-3xl font-bold text-blue-400">{currentIndex + 1}/{QUIZ_SCENARIOS.length}</div>
-          <div className="text-xs text-slate-500 mt-1">Scenarios</div>
+        <div className="pixel-stat">
+          <div className="pixel-stat-label">QUIZ</div>
+          <div className="pixel-stat-value">
+            {currentIndex + 1}/{QUIZ_SCENARIOS.length}
+          </div>
+          <div className="pixel-text" style={{color: 'var(--pixel-blue)', marginTop: '4px'}}>
+            SCENARIOS
+          </div>
         </div>
       </div>
 
       {/* Quiz Card */}
-      <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl p-8 border border-blue-500/30 backdrop-blur">
+      <div className="pixel-section pixel-section-grass">
         {/* City Badge */}
-        <div className="inline-block px-4 py-2 bg-blue-500/20 rounded-full text-sm font-semibold text-blue-300 mb-6">
+        <div className="pixel-level" style={{marginBottom: '12px', display: 'inline-block', background: 'var(--pixel-blue)', color: 'var(--pixel-white)'}}>
           📍 {current.city}
         </div>
 
         {/* Scenario */}
-        <div className="mb-8">
-          <h3 className="text-2xl font-bold text-white mb-4">What do you think?</h3>
-          <p className="text-lg text-slate-200 leading-relaxed">{current.scenario}</p>
+        <div style={{marginBottom: '12px'}}>
+          <div className="pixel-h2" style={{color: 'var(--pixel-black)', marginBottom: '8px'}}>
+            🤔 WHAT DO YOU THINK?
+          </div>
+          <div className="pixel-text" style={{color: 'var(--pixel-black)', lineHeight: '1.6', marginBottom: '8px'}}>
+            {current.scenario}
+          </div>
         </div>
 
         {/* Answer Buttons */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '12px'}}>
           <button
             onClick={() => handleAnswer(false)}
             disabled={answered}
-            className={`p-6 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${
-              !answered
-                ? 'bg-gradient-to-br from-red-500/30 to-red-600/30 border-2 border-red-500/50 text-red-300 hover:border-red-400 hover:from-red-500/40 hover:to-red-600/40'
-                : userAnswer === false
-                  ? isCorrect
-                    ? 'bg-gradient-to-br from-red-500/60 to-red-600/60 border-2 border-red-400 text-white ring-2 ring-red-400/50'
-                    : 'bg-gradient-to-br from-red-500/20 to-red-600/20 border-2 border-red-500/20 text-red-300'
-                  : 'bg-gradient-to-br from-red-500/10 to-red-600/10 border-2 border-red-500/10 text-red-200 opacity-50'
-            }`}
+            className="pixel-btn pixel-btn-danger"
+            style={{
+              padding: '12px',
+              minHeight: '80px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: !answered ? 1 : userAnswer === false ? (isCorrect ? 1 : 0.6) : 0.4,
+              background: userAnswer === false && isCorrect ? 'var(--pixel-orange)' : 'var(--pixel-red)'
+            }}
           >
-            <div className="flex items-center justify-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              SCAM! 🚫
+            <div style={{fontSize: '24px', marginBottom: '4px'}}>🚫</div>
+            <div className="pixel-text" style={{color: 'var(--pixel-white)', fontWeight: 'bold'}}>
+              SCAM!
             </div>
           </button>
           <button
             onClick={() => handleAnswer(true)}
             disabled={answered}
-            className={`p-6 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${
-              !answered
-                ? 'bg-gradient-to-br from-emerald-500/30 to-emerald-600/30 border-2 border-emerald-500/50 text-emerald-300 hover:border-emerald-400 hover:from-emerald-500/40 hover:to-emerald-600/40'
-                : userAnswer === true
-                  ? isCorrect
-                    ? 'bg-gradient-to-br from-emerald-500/60 to-emerald-600/60 border-2 border-emerald-400 text-white ring-2 ring-emerald-400/50'
-                    : 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border-2 border-emerald-500/20 text-emerald-300'
-                  : 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border-2 border-emerald-500/10 text-emerald-200 opacity-50'
-            }`}
+            className="pixel-btn pixel-btn-success"
+            style={{
+              padding: '12px',
+              minHeight: '80px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: !answered ? 1 : userAnswer === true ? (isCorrect ? 1 : 0.6) : 0.4,
+              background: userAnswer === true && isCorrect ? 'var(--pixel-green)' : 'var(--pixel-green)'
+            }}
           >
-            <div className="flex items-center justify-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              SAFE ✓
+            <div style={{fontSize: '24px', marginBottom: '4px'}}>✓</div>
+            <div className="pixel-text" style={{color: 'var(--pixel-black)', fontWeight: 'bold'}}>
+              SAFE!
             </div>
           </button>
         </div>
@@ -255,54 +271,43 @@ export default function QuizGame({ onStatsUpdate }) {
         {/* Explanation */}
         {showExplanation && (
           <div
-            className={`p-6 rounded-xl mb-8 space-y-4 border-l-4 ${
-              isCorrect
-                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-200'
-                : 'bg-orange-500/10 border-orange-500 text-orange-200'
-            }`}
+            className="pixel-card"
+            style={{
+              marginBottom: '12px',
+              background: isCorrect ? 'var(--pixel-grass)' : 'var(--pixel-sand)',
+              color: isCorrect ? 'var(--pixel-black)' : 'var(--pixel-black)'
+            }}
           >
-            <div className="flex gap-3 mb-3">
+            <div style={{marginBottom: '8px'}}>
               {isCorrect ? (
-                <>
-                  <Award className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-bold">Correct! You recognized the signals.</span>
-                </>
+                <div className="pixel-text" style={{color: 'var(--pixel-green)', fontWeight: 'bold', fontSize: '12px'}}>
+                  🏆 CORRECT! YOU SPOTTED THE SIGNALS!
+                </div>
               ) : (
-                <>
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-bold">Not quite. Here's what to look for:</span>
-                </>
+                <div className="pixel-text" style={{color: 'var(--pixel-red)', fontWeight: 'bold', fontSize: '12px'}}>
+                  ⚠️ NOT QUITE! HERE'S WHAT TO LOOK FOR:
+                </div>
               )}
             </div>
-            <p className="text-sm">{current.explanation}</p>
+            <div className="pixel-text" style={{color: 'var(--pixel-black)', marginBottom: '8px', lineHeight: '1.6'}}>
+              {current.explanation}
+            </div>
 
             {/* Trust Signals Analysis */}
             {current.signals && (
-              <div className="space-y-2">
-                <div className="font-semibold flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
-                  Trust Signal Analysis
+              <div style={{marginBottom: '8px'}}>
+                <div className="pixel-text" style={{color: 'var(--pixel-black)', fontWeight: 'bold', marginBottom: '4px', fontSize: '10px'}}>
+                  👁️ TRUST SIGNALS:
                 </div>
-                <div className="space-y-2 text-sm">
+                <div style={{display: 'grid', gap: '4px'}}>
                   {current.signals.map((signal, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      {signal.type === 'danger' ? (
-                        <>
-                          <span className="text-red-400 font-bold">⚠️</span>
-                          <div>
-                            <div className="text-red-200">{signal.text}</div>
-                            <div className="text-xs text-red-300/70">Risk Level: {signal.weight}</div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-emerald-400 font-bold">✓</span>
-                          <div>
-                            <div className="text-emerald-200">{signal.text}</div>
-                            <div className="text-xs text-emerald-300/70">Indicator: {signal.weight}</div>
-                          </div>
-                        </>
-                      )}
+                    <div key={i} style={{padding: '4px 6px', background: signal.type === 'danger' ? 'rgba(204,0,0,0.2)' : 'rgba(0,204,0,0.2)', border: `1px solid ${signal.type === 'danger' ? 'var(--pixel-red)' : 'var(--pixel-green)'}`, fontSize: '8px'}}>
+                      <div className="pixel-text" style={{color: signal.type === 'danger' ? 'var(--pixel-red)' : 'var(--pixel-green)', fontWeight: 'bold', marginBottom: '2px'}}>
+                        {signal.type === 'danger' ? '⚠️' : '✓'} {signal.text}
+                      </div>
+                      <div className="pixel-text" style={{color: 'var(--pixel-black)', fontSize: '7px'}}>
+                        Level: {signal.weight}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -311,15 +316,13 @@ export default function QuizGame({ onStatsUpdate }) {
 
             {/* Tips */}
             <div>
-              <div className="font-semibold mb-2 flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                Verification Steps:
+              <div className="pixel-text" style={{color: 'var(--pixel-black)', fontWeight: 'bold', marginBottom: '4px', fontSize: '10px'}}>
+                ⚡ VERIFICATION STEPS:
               </div>
-              <ul className="space-y-1 text-sm">
+              <ul style={{paddingLeft: '0', margin: '0'}}>
                 {current.tips.map((tip, i) => (
-                  <li key={i} className="flex gap-2">
-                    <span>→</span>
-                    <span>{tip}</span>
+                  <li key={i} className="pixel-text" style={{color: 'var(--pixel-black)', fontSize: '8px', marginBottom: '2px', listStyle: 'none'}}>
+                    → {tip}
                   </li>
                 ))}
               </ul>
@@ -331,36 +334,43 @@ export default function QuizGame({ onStatsUpdate }) {
         {answered && (
           <button
             onClick={handleNext}
-            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-xl hover:from-emerald-600 hover:to-blue-600 transition-all flex items-center justify-center gap-2 group"
+            className="pixel-btn pixel-btn-info"
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              background: 'var(--pixel-blue)',
+              color: 'var(--pixel-white)'
+            }}
           >
-            Next Scenario
-            <ChevronDown className="w-5 h-5 rotate-[-90deg] group-hover:translate-x-1 transition-transform" />
+            ➜ NEXT SCENARIO →
           </button>
         )}
       </div>
 
       {/* Stats Section */}
       {history.length > 0 && (
-        <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl p-6 border border-blue-500/20">
-          <h3 className="font-bold text-white mb-4">Your Progress</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-emerald-400">{stats.correct}</div>
-              <div className="text-xs text-slate-400">Correct Answers</div>
+        <div className="pixel-section pixel-section-stone">
+          <div className="pixel-h2" style={{color: 'var(--pixel-yellow)', marginBottom: '8px', textAlign: 'center'}}>
+            📊 YOUR PROGRESS 📊
+          </div>
+          <div className="pixel-grid pixel-grid-4">
+            <div className="pixel-stat">
+              <div className="pixel-stat-value" style={{color: 'var(--pixel-green)'}}>{stats.correct}</div>
+              <div className="pixel-stat-label">CORRECT</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-400">{stats.total - stats.correct}</div>
-              <div className="text-xs text-slate-400">Mistakes</div>
+            <div className="pixel-stat">
+              <div className="pixel-stat-value" style={{color: 'var(--pixel-red)'}}>{stats.total - stats.correct}</div>
+              <div className="pixel-stat-label">MISTAKES</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{stats.streak}</div>
-              <div className="text-xs text-slate-400">Current Streak</div>
+            <div className="pixel-stat">
+              <div className="pixel-stat-value" style={{color: 'var(--pixel-orange)'}}>{stats.streak}</div>
+              <div className="pixel-stat-label">STREAK</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">
+            <div className="pixel-stat">
+              <div className="pixel-stat-value" style={{color: 'var(--pixel-blue)'}}>
                 {stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0}%
               </div>
-              <div className="text-xs text-slate-400">Accuracy</div>
+              <div className="pixel-stat-label">ACCURACY</div>
             </div>
           </div>
         </div>

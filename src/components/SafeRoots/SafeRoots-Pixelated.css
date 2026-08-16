@@ -1,0 +1,530 @@
+/* SafeRoots Minecraft-Inspired Pixelated Design System */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  /* Minecraft-inspired palette */
+  --pixel-bg-primary: #1a472a;
+  --pixel-bg-secondary: #2d5a3d;
+  --pixel-grass: #7cb342;
+  --pixel-dirt: #8b7355;
+  --pixel-stone: #7f8083;
+  --pixel-sand: #dfd3c3;
+  --pixel-red: #cc0000;
+  --pixel-green: #00cc00;
+  --pixel-blue: #0066cc;
+  --pixel-yellow: #ffcc00;
+  --pixel-orange: #ff9900;
+  --pixel-purple: #9933cc;
+  --pixel-white: #ffffff;
+  --pixel-black: #0d0d0d;
+
+  /* Pixel font */
+  --pixel-font: 'Press Start 2P', cursive;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--pixel-font), monospace;
+  background-color: var(--pixel-bg-primary);
+  color: var(--pixel-white);
+}
+
+/* Base pixelated text styling */
+.saferoots-app {
+  background: linear-gradient(180deg, #87ceeb 0%, #e0f6ff 50%, #90ee90 100%);
+  min-height: 100vh;
+  font-family: var(--pixel-font), monospace;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Pixelated box shadow - creates blocky 3D effect */
+.pixel-box {
+  box-shadow:
+    4px 4px 0px rgba(0, 0, 0, 0.5),
+    8px 8px 0px rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--pixel-black);
+}
+
+.pixel-box-hover:hover {
+  transform: translate(-2px, -2px);
+  box-shadow:
+    6px 6px 0px rgba(0, 0, 0, 0.5),
+    10px 10px 0px rgba(0, 0, 0, 0.3);
+  transition: all 60ms steps(1);
+}
+
+/* Pixelated buttons */
+.pixel-btn {
+  font-family: var(--pixel-font), monospace;
+  font-size: 8px;
+  padding: 8px 12px;
+  border: 2px solid var(--pixel-black);
+  background-color: var(--pixel-grass);
+  color: var(--pixel-black);
+  cursor: pointer;
+  box-shadow:
+    3px 3px 0px rgba(0, 0, 0, 0.5),
+    6px 6px 0px rgba(0, 0, 0, 0.3);
+  transition: all 60ms steps(1);
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.pixel-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow:
+    5px 5px 0px rgba(0, 0, 0, 0.5),
+    8px 8px 0px rgba(0, 0, 0, 0.3);
+}
+
+.pixel-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    1px 1px 0px rgba(0, 0, 0, 0.5),
+    2px 2px 0px rgba(0, 0, 0, 0.3);
+}
+
+/* Pixelated danger button (red) */
+.pixel-btn-danger {
+  background-color: var(--pixel-red);
+  color: var(--pixel-white);
+}
+
+/* Pixelated success button (green) */
+.pixel-btn-success {
+  background-color: var(--pixel-green);
+  color: var(--pixel-black);
+}
+
+/* Pixelated info button (blue) */
+.pixel-btn-info {
+  background-color: var(--pixel-blue);
+  color: var(--pixel-white);
+}
+
+/* Pixelated cards */
+.pixel-card {
+  background-color: var(--pixel-sand);
+  border: 3px solid var(--pixel-black);
+  padding: 12px;
+  box-shadow:
+    4px 4px 0px rgba(0, 0, 0, 0.5),
+    8px 8px 0px rgba(0, 0, 0, 0.3);
+  color: var(--pixel-black);
+}
+
+.pixel-card-grass {
+  background-color: var(--pixel-grass);
+  border: 3px solid var(--pixel-black);
+  padding: 12px;
+  box-shadow:
+    4px 4px 0px rgba(0, 0, 0, 0.5),
+    8px 8px 0px rgba(0, 0, 0, 0.3);
+  color: var(--pixel-black);
+}
+
+.pixel-card-stone {
+  background-color: var(--pixel-stone);
+  border: 3px solid var(--pixel-black);
+  padding: 12px;
+  box-shadow:
+    4px 4px 0px rgba(0, 0, 0, 0.5),
+    8px 8px 0px rgba(0, 0, 0, 0.3);
+  color: var(--pixel-white);
+}
+
+/* Pixelated heading */
+.pixel-h1 {
+  font-family: var(--pixel-font), monospace;
+  font-size: 24px;
+  text-shadow:
+    2px 2px 0px rgba(0, 0, 0, 0.5),
+    4px 4px 0px rgba(0, 0, 0, 0.3);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.pixel-h2 {
+  font-family: var(--pixel-font), monospace;
+  font-size: 16px;
+  text-shadow:
+    2px 2px 0px rgba(0, 0, 0, 0.5);
+  margin: 8px 0;
+}
+
+.pixel-h3 {
+  font-family: var(--pixel-font), monospace;
+  font-size: 12px;
+  text-shadow:
+    1px 1px 0px rgba(0, 0, 0, 0.5);
+  margin: 4px 0;
+}
+
+.pixel-text {
+  font-family: var(--pixel-font), monospace;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* Navigation bar - dirt brown like Minecraft */
+.pixel-nav {
+  background-color: var(--pixel-dirt);
+  border-bottom: 4px solid var(--pixel-black);
+  padding: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0px 4px 0px rgba(0, 0, 0, 0.5);
+}
+
+.pixel-nav-brand {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pixel-icon-box {
+  width: 32px;
+  height: 32px;
+  background-color: var(--pixel-red);
+  border: 2px solid var(--pixel-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.pixel-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.pixel-tab {
+  background-color: var(--pixel-stone);
+  border: 2px solid var(--pixel-black);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: var(--pixel-font), monospace;
+  font-size: 8px;
+  color: var(--pixel-white);
+  transition: all 60ms steps(1);
+  text-transform: uppercase;
+}
+
+.pixel-tab:hover {
+  background-color: var(--pixel-grass);
+  color: var(--pixel-black);
+  transform: translate(0, -2px);
+  box-shadow: 0px 2px 0px rgba(0, 0, 0, 0.5);
+}
+
+.pixel-tab.active {
+  background-color: var(--pixel-yellow);
+  color: var(--pixel-black);
+  box-shadow:
+    2px 2px 0px rgba(0, 0, 0, 0.5),
+    4px 4px 0px rgba(0, 0, 0, 0.3);
+}
+
+/* Pixelated grid */
+.pixel-grid {
+  display: grid;
+  gap: 8px;
+  grid-auto-flow: dense;
+}
+
+.pixel-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.pixel-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.pixel-grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+/* Pixelated progress bar */
+.pixel-progress {
+  background-color: var(--pixel-stone);
+  border: 2px solid var(--pixel-black);
+  height: 20px;
+  overflow: hidden;
+}
+
+.pixel-progress-bar {
+  background-color: var(--pixel-green);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--pixel-font), monospace;
+  font-size: 8px;
+  color: var(--pixel-black);
+  font-weight: bold;
+}
+
+/* Pixelated stat box */
+.pixel-stat {
+  background-color: var(--pixel-grass);
+  border: 2px solid var(--pixel-black);
+  padding: 8px;
+  text-align: center;
+  box-shadow:
+    2px 2px 0px rgba(0, 0, 0, 0.5),
+    4px 4px 0px rgba(0, 0, 0, 0.3);
+}
+
+.pixel-stat-value {
+  font-family: var(--pixel-font), monospace;
+  font-size: 20px;
+  color: var(--pixel-black);
+  font-weight: bold;
+}
+
+.pixel-stat-label {
+  font-family: var(--pixel-font), monospace;
+  font-size: 8px;
+  color: var(--pixel-black);
+  text-transform: uppercase;
+}
+
+/* Pixelated border effect */
+.pixel-border-thick {
+  border: 4px solid var(--pixel-black);
+}
+
+.pixel-border-thin {
+  border: 2px solid var(--pixel-black);
+}
+
+/* Pixelated level indicator */
+.pixel-level {
+  background-color: var(--pixel-purple);
+  border: 2px solid var(--pixel-black);
+  padding: 6px 10px;
+  font-family: var(--pixel-font), monospace;
+  font-size: 10px;
+  color: var(--pixel-white);
+  display: inline-block;
+  box-shadow:
+    2px 2px 0px rgba(0, 0, 0, 0.5),
+    4px 4px 0px rgba(0, 0, 0, 0.3);
+}
+
+/* Pixelated danger indicator (red) */
+.pixel-danger {
+  color: var(--pixel-red);
+  font-weight: bold;
+  text-shadow:
+    1px 1px 0px rgba(0, 0, 0, 0.5);
+}
+
+/* Pixelated success indicator (green) */
+.pixel-success {
+  color: var(--pixel-green);
+  font-weight: bold;
+  text-shadow:
+    1px 1px 0px rgba(0, 0, 0, 0.5);
+}
+
+/* Pixelated warning indicator (orange) */
+.pixel-warning {
+  color: var(--pixel-orange);
+  font-weight: bold;
+  text-shadow:
+    1px 1px 0px rgba(0, 0, 0, 0.5);
+}
+
+/* Pixelated fade-in animation */
+@keyframes pixel-fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pixel-fade-in {
+  animation: pixel-fadeIn 200ms steps(4) forwards;
+}
+
+/* Pixelated bounce animation */
+@keyframes pixel-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.pixel-bounce {
+  animation: pixel-bounce 400ms steps(2) infinite;
+}
+
+/* Pixelated blink animation */
+@keyframes pixel-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0.3;
+  }
+}
+
+.pixel-blink {
+  animation: pixel-blink 600ms steps(2) infinite;
+}
+
+/* Responsive text sizing for small screens */
+@media (max-width: 768px) {
+  .pixel-h1 {
+    font-size: 16px;
+  }
+
+  .pixel-h2 {
+    font-size: 12px;
+  }
+
+  .pixel-text {
+    font-size: 8px;
+  }
+
+  .pixel-btn {
+    font-size: 7px;
+    padding: 6px 8px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .pixel-bounce,
+  .pixel-blink,
+  .pixel-fade-in,
+  .pixel-btn,
+  .pixel-tab {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Main content wrapper */
+.pixel-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Pixelated section */
+.pixel-section {
+  background-color: var(--pixel-sand);
+  border: 3px solid var(--pixel-black);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow:
+    4px 4px 0px rgba(0, 0, 0, 0.5),
+    8px 8px 0px rgba(0, 0, 0, 0.3);
+}
+
+.pixel-section-grass {
+  background-color: var(--pixel-grass);
+  color: var(--pixel-black);
+}
+
+.pixel-section-stone {
+  background-color: var(--pixel-stone);
+  color: var(--pixel-white);
+}
+
+/* Minecraft-style dirt blocks pattern background */
+.pixel-pattern-dirt {
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 16px, rgba(0, 0, 0, 0.1) 16px, rgba(0, 0, 0, 0.1) 32px),
+    repeating-linear-gradient(90deg, transparent, transparent 16px, rgba(0, 0, 0, 0.1) 16px, rgba(0, 0, 0, 0.1) 32px);
+}
+
+/* Pixelated floating effect */
+@keyframes pixel-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.pixel-float {
+  animation: pixel-float 1000ms ease-in-out infinite;
+}
+
+/* Pixelated tooltip */
+.pixel-tooltip {
+  background-color: var(--pixel-black);
+  color: var(--pixel-yellow);
+  padding: 4px 8px;
+  border: 2px solid var(--pixel-yellow);
+  font-family: var(--pixel-font), monospace;
+  font-size: 8px;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+}
+
+/* Minecraft-style chest/inventory box */
+.pixel-inventory {
+  background-color: #8b7355;
+  border: 3px solid var(--pixel-black);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 4px;
+}
+
+.pixel-inventory-slot {
+  background-color: #a0826d;
+  border: 2px solid var(--pixel-black);
+  padding: 8px;
+  text-align: center;
+  box-shadow: inset 1px 1px 0px rgba(0, 0, 0, 0.5);
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pixelated checkbox */
+.pixel-checkbox {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--pixel-black);
+  background-color: var(--pixel-white);
+  cursor: pointer;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+}
+
+.pixel-checkbox:checked {
+  background-color: var(--pixel-green);
+}
+
+.pixel-checkbox:checked::before {
+  content: '✓';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pixel-black);
+  font-weight: bold;
+  font-size: 12px;
+}
