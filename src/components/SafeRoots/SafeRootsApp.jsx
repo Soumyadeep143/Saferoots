@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Globe, Map, BookOpen, Trophy, ArrowRight, Shield } from 'lucide-react';
 import QuizGame from './QuizGame';
+import DomainQuizGame from './DomainQuizGame';
 import FactCheckingMap from './FactCheckingMap';
 import MediaDecoder from './MediaDecoder';
 import './SafeRoots-Pixelated.css';
@@ -8,6 +9,15 @@ import './SafeRoots-Pixelated.css';
 export default function SafeRootsApp() {
   const [activeTab, setActiveTab] = useState('home');
   const [quizStats, setQuizStats] = useState({ total: 0, correct: 0, streak: 0 });
+  const [badges, setBadges] = useState({});
+  const [showBadgeNotif, setShowBadgeNotif] = useState(null);
+
+  useEffect(() => {
+    const savedBadges = localStorage.getItem('saferoots-badges');
+    if (savedBadges) {
+      setBadges(JSON.parse(savedBadges));
+    }
+  }, []);
 
   return (
     <div className="saferoots-app min-h-screen">
@@ -37,6 +47,7 @@ export default function SafeRootsApp() {
             {[
               { id: 'home', label: '🏠 Home' },
               { id: 'quiz', label: '🎮 Quiz' },
+              { id: 'domain-quiz', label: '🌍 Domains' },
               { id: 'map', label: '🗺️ Map' },
               { id: 'media', label: '📰 Media' },
             ].map(({ id, label }) => (
@@ -54,11 +65,49 @@ export default function SafeRootsApp() {
 
       {/* Content */}
       <main className="pixel-content">
-        {activeTab === 'home' && <HomePage onNavigate={setActiveTab} />}
+        {activeTab === 'home' && <HomePage onNavigate={setActiveTab} badges={badges} />}
         {activeTab === 'quiz' && <QuizGame onStatsUpdate={setQuizStats} />}
+        {activeTab === 'domain-quiz' && (
+          <DomainQuizGame
+            onStatsUpdate={setQuizStats}
+            onBadgeEarned={(badge) => {
+              setShowBadgeNotif(badge);
+              const savedBadges = localStorage.getItem('saferoots-badges');
+              setBadges(JSON.parse(savedBadges || '{}'));
+              setTimeout(() => setShowBadgeNotif(null), 3000);
+            }}
+          />
+        )}
         {activeTab === 'map' && <FactCheckingMap />}
         {activeTab === 'media' && <MediaDecoder />}
       </main>
+
+      {/* Badge Notification */}
+      {showBadgeNotif && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--pixel-yellow)',
+            color: 'var(--pixel-black)',
+            padding: '16px',
+            border: '3px solid var(--pixel-black)',
+            textAlign: 'center',
+            animation: 'pixel-bounce 400ms steps(2) infinite',
+            zIndex: 100,
+            boxShadow: '4px 4px 0px rgba(0,0,0,0.5)',
+          }}
+        >
+          <div className="pixel-h2" style={{color: 'var(--pixel-black)', marginBottom: '8px'}}>
+            🏆 BADGE EARNED! 🏆
+          </div>
+          <div className="pixel-text" style={{color: 'var(--pixel-black)'}}>
+            {showBadgeNotif.badge?.emoji} {showBadgeNotif.badge?.name} - {showBadgeNotif.location.toUpperCase()}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer style={{borderTop: '4px solid var(--pixel-black)', background: 'var(--pixel-dirt)', padding: '12px', marginTop: '16px'}}>
@@ -72,7 +121,7 @@ export default function SafeRootsApp() {
   );
 }
 
-function HomePage({ onNavigate }) {
+function HomePage({ onNavigate, badges }) {
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -174,6 +223,31 @@ function HomePage({ onNavigate }) {
         </div>
       </div>
 
+      {/* Badges Earned Section */}
+      {Object.keys(badges || {}).length > 0 && (
+        <div className="pixel-section pixel-section-stone">
+          <div className="pixel-h2" style={{color: 'var(--pixel-yellow)', marginBottom: '12px', textAlign: 'center'}}>
+            🏆 YOUR BADGES 🏆
+          </div>
+          <div className="pixel-grid pixel-grid-4">
+            {Object.keys(badges).map((badgeKey) => {
+              const [location, domain] = badgeKey.split('-');
+              return (
+                <div key={badgeKey} className="pixel-card-grass" style={{textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80px'}}>
+                  <div style={{fontSize: '32px', marginBottom: '4px'}}>✨</div>
+                  <div className="pixel-text" style={{color: 'var(--pixel-green)', fontWeight: 'bold', fontSize: '9px', marginBottom: '2px'}}>
+                    {domain.toUpperCase()}
+                  </div>
+                  <div className="pixel-text" style={{color: 'var(--pixel-black)', fontSize: '7px'}}>
+                    📍 {location.toUpperCase()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* CTA Section */}
       <div className="pixel-grid pixel-grid-3">
         <div>
@@ -193,7 +267,28 @@ function HomePage({ onNavigate }) {
             }}
           >
             <div style={{fontSize: '32px', marginBottom: '8px'}}>🎮</div>
-            START QUIZ
+            CLASSIC QUIZ
+          </button>
+        </div>
+        <div>
+          <button
+            onClick={() => onNavigate('domain-quiz')}
+            className="pixel-btn"
+            style={{
+              background: 'var(--pixel-purple)',
+              color: 'var(--pixel-white)',
+              width: '100%',
+              height: '120px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{fontSize: '32px', marginBottom: '8px'}}>🌍</div>
+            DOMAIN QUIZ
           </button>
         </div>
         <div>
@@ -215,27 +310,6 @@ function HomePage({ onNavigate }) {
           >
             <div style={{fontSize: '32px', marginBottom: '8px'}}>🗺️</div>
             VIEW MAP
-          </button>
-        </div>
-        <div>
-          <button
-            onClick={() => onNavigate('media')}
-            className="pixel-btn"
-            style={{
-              background: 'var(--pixel-red)',
-              color: 'var(--pixel-white)',
-              width: '100%',
-              height: '120px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              cursor: 'pointer'
-            }}
-          >
-            <div style={{fontSize: '32px', marginBottom: '8px'}}>📰</div>
-            DECODE MEDIA
           </button>
         </div>
       </div>
