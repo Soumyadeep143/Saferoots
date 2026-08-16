@@ -103,6 +103,25 @@ export default function DomainQuizGame({ onStatsUpdate, onBadgeEarned }) {
 
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
+      {/* Breadcrumb Navigation */}
+      <div style={{ padding: '8px 0', fontSize: '10px', color: 'var(--pixel-black)' }}>
+        <span style={{ cursor: 'pointer', color: 'var(--pixel-blue)', fontWeight: 'bold' }} onClick={() => { setSelectedLocation(null); setSelectedDomain(null); }}>
+          🏠 DOMAINS
+        </span>
+        {selectedLocation && (
+          <>
+            {' > '}
+            <span style={{ color: 'var(--pixel-black)', fontWeight: 'bold' }}>{getLocationName(selectedLocation)}</span>
+          </>
+        )}
+        {selectedDomain && (
+          <>
+            {' > '}
+            <span style={{ color: 'var(--pixel-black)', fontWeight: 'bold' }}>{getDomainInfo(selectedDomain)?.name}</span>
+          </>
+        )}
+      </div>
+
       {/* Location & Domain Selection */}
       {!selectedLocation || !selectedDomain ? (
         <div>
@@ -169,7 +188,7 @@ export default function DomainQuizGame({ onStatsUpdate, onBadgeEarned }) {
                         background: 'var(--pixel-blue)',
                         color: 'var(--pixel-white)',
                         padding: '12px',
-                        minHeight: '100px',
+                        minHeight: '120px',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
@@ -179,7 +198,7 @@ export default function DomainQuizGame({ onStatsUpdate, onBadgeEarned }) {
                       }}
                     >
                       {isBadgeEarned && (
-                        <div style={{ position: 'absolute', top: '4px', right: '4px', fontSize: '20px' }}>
+                        <div style={{ position: 'absolute', top: '4px', right: '4px', fontSize: '20px', animation: 'pixel-bounce 400ms steps(2) infinite' }}>
                           ✨
                         </div>
                       )}
@@ -187,9 +206,20 @@ export default function DomainQuizGame({ onStatsUpdate, onBadgeEarned }) {
                       <div className="pixel-text" style={{ color: 'var(--pixel-white)', fontWeight: 'bold', fontSize: '9px', textAlign: 'center' }}>
                         {domain.name}
                       </div>
-                      {progress && (
-                        <div className="pixel-text" style={{ color: 'var(--pixel-yellow)', fontSize: '7px', marginTop: '4px' }}>
-                          {progress.completed}/3
+                      {progress ? (
+                        <div style={{ marginTop: '6px', width: '100%', textAlign: 'center' }}>
+                          <div className="pixel-text" style={{ color: 'var(--pixel-yellow)', fontSize: '8px', marginBottom: '3px', fontWeight: 'bold' }}>
+                            {progress.completed}/3 DONE
+                          </div>
+                          {!isBadgeEarned && (
+                            <div className="pixel-text" style={{ color: 'var(--pixel-orange)', fontSize: '7px' }}>
+                              🏆 BADGE IN PROGRESS
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="pixel-text" style={{ color: 'var(--pixel-white)', fontSize: '7px', marginTop: '6px' }}>
+                          START QUIZ
                         </div>
                       )}
                     </button>
@@ -204,8 +234,11 @@ export default function DomainQuizGame({ onStatsUpdate, onBadgeEarned }) {
                   background: 'var(--pixel-red)',
                   color: 'var(--pixel-white)',
                   width: '100%',
-                  marginTop: '12px',
-                  padding: '8px',
+                  marginTop: '16px',
+                  padding: '12px',
+                  fontSize: '9px',
+                  fontWeight: 'bold',
+                  minHeight: '40px',
                 }}
               >
                 ← BACK TO LOCATIONS
@@ -368,7 +401,36 @@ export default function DomainQuizGame({ onStatsUpdate, onBadgeEarned }) {
               </div>
             )}
 
-            {/* Next Button */}
+            {/* Navigation Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+              <button
+                onClick={() => setSelectedDomain(null)}
+                className="pixel-btn"
+                style={{
+                  padding: '8px 12px',
+                  background: 'var(--pixel-orange)',
+                  color: 'var(--pixel-black)',
+                  fontSize: '8px',
+                }}
+              >
+                ← CHANGE DOMAIN
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedLocation(null);
+                  setSelectedDomain(null);
+                }}
+                className="pixel-btn pixel-btn-danger"
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '8px',
+                }}
+              >
+                ← ALL LOCATIONS
+              </button>
+            </div>
+
+            {/* Next/Restart Button */}
             {answered && (
               <div>
                 {currentScenarioIndex < scenarios.length - 1 ? (
@@ -377,40 +439,32 @@ export default function DomainQuizGame({ onStatsUpdate, onBadgeEarned }) {
                     className="pixel-btn pixel-btn-info"
                     style={{
                       width: '100%',
-                      padding: '8px 12px',
+                      padding: '12px',
                       background: 'var(--pixel-blue)',
                       color: 'var(--pixel-white)',
+                      marginTop: '8px',
+                      fontSize: '9px',
+                      fontWeight: 'bold',
                     }}
                   >
                     ➜ NEXT SCENARIO →
                   </button>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <button
-                      onClick={handleNext}
-                      className="pixel-btn pixel-btn-info"
-                      style={{
-                        padding: '8px 12px',
-                        background: 'var(--pixel-blue)',
-                        color: 'var(--pixel-white)',
-                      }}
-                    >
-                      🔄 RESTART
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedDomain(null);
-                      }}
-                      className="pixel-btn pixel-btn-danger"
-                      style={{
-                        padding: '8px 12px',
-                        background: 'var(--pixel-green)',
-                        color: 'var(--pixel-black)',
-                      }}
-                    >
-                      📚 CHANGE DOMAIN
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleNext}
+                    className="pixel-btn pixel-btn-info"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: 'var(--pixel-blue)',
+                      color: 'var(--pixel-white)',
+                      marginTop: '8px',
+                      fontSize: '9px',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    🔄 RESTART DOMAIN
+                  </button>
                 )}
               </div>
             )}
