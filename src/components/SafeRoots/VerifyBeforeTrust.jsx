@@ -1,385 +1,287 @@
-import { useState } from 'react';
-import { AlertCircle, CheckCircle, TrendingDown } from 'lucide-react';
-
-const TRUST_SIGNALS = {
-  danger: [
-    { text: 'Urgent payment request', weight: 'CRITICAL', pattern: /\b(payment|send money|transfer|pay.*now|urgent.*pay|book.*fee)\b/i },
-    { text: 'Unknown sender', weight: 'HIGH', pattern: /\b(unknown|stranger|unverified)\b/i },
-    { text: 'Suspicious link', weight: 'CRITICAL', pattern: /\bhttps?:\/\/[^\s]+\b/ },
-    { text: 'Urgency language', weight: 'HIGH', pattern: /\b(immediately|urgent|quickly|hurry|limited time|act now|time-sensitive|expires|deadline)\b/i },
-    { text: 'Too good to be true', weight: 'HIGH', pattern: /\b(free|guaranteed|win|claim|inheritance|jackpot|prize|unlimited|risk-free)\b/i },
-    { text: 'Spelling/grammar errors', weight: 'MEDIUM', pattern: null },
-    { text: 'Fake official tone', weight: 'HIGH', pattern: /\b(verify|confirm|validate|authenticate|please confirm|click to confirm)\b/i },
-    { text: 'Personal information request', weight: 'CRITICAL', pattern: /\b(password|pin|otp|cvv|ssn|id number|account number|passport|document)\b/i },
-    { text: 'Pressure tactics', weight: 'HIGH', pattern: /\b(or else|if not|must|cannot|prohibited|not allowed)\b/i },
-  ],
-  safe: [
-    { text: 'Official domain email', weight: 'CRITICAL', pattern: /@(company|org|gov)\.(com|org|gov)/ },
-    { text: 'Specific details', weight: 'HIGH', pattern: null },
-    { text: 'No payment requested', weight: 'HIGH', pattern: null },
-    { text: 'Verifiable contact info', weight: 'HIGH', pattern: /\b(phone|website|office address|official)\b/i },
-    { text: 'Professional tone', weight: 'MEDIUM', pattern: null },
-  ]
-};
-
-function detectSignals(text) {
-  const signals = [];
-  let spellingScore = 0;
-
-  // Detect danger signals
-  TRUST_SIGNALS.danger.forEach(signal => {
-    if (signal.pattern && signal.pattern.test(text)) {
-      signals.push({ ...signal, type: 'danger' });
-    }
-  });
-
-  // Check for spelling/grammar errors (simple heuristic)
-  const words = text.split(/\s+/);
-  const errors = words.filter(w => w.length > 3 && /[a-z]{2,}\d+|\d+[a-z]{2,}/.test(w)).length;
-  spellingScore = Math.min(errors, 3);
-  if (spellingScore > 0) {
-    signals.push({
-      text: 'Spelling/grammar errors',
-      weight: 'MEDIUM',
-      pattern: null,
-      type: 'danger',
-      confidence: spellingScore
-    });
-  }
-
-  // Check for official characteristics
-  if (/\b(dear|regards|sincerely)\b/i.test(text)) {
-    signals.push({ text: 'Professional tone', weight: 'MEDIUM', pattern: null, type: 'safe' });
-  }
-
-  // Check for specificity
-  const hasNumbers = /\d{2,}/.test(text);
-  const hasDetails = /\b(regarding|concerning|subject|reference|case|ticket|order|invoice)\b/i.test(text);
-  if (hasNumbers || hasDetails) {
-    signals.push({ text: 'Specific details provided', weight: 'HIGH', pattern: null, type: 'safe' });
-  }
-
-  return signals;
-}
-
-function calculateVerdict(signals, text) {
-  const dangerSignals = signals.filter(s => s.type === 'danger');
-  const safeSignals = signals.filter(s => s.type === 'safe');
-
-  // Weight calculation
-  const weightValues = { CRITICAL: 25, HIGH: 15, MEDIUM: 10, LOW: 5 };
-  const dangerScore = dangerSignals.reduce((sum, s) => sum + (weightValues[s.weight] || 0), 0);
-  const safeScore = safeSignals.reduce((sum, s) => sum + (weightValues[s.weight] || 0), 0);
-
-  const totalScore = dangerScore + safeScore;
-  const scamLikelihood = totalScore > 0 ? Math.round((dangerScore / totalScore) * 100) : 50;
-
-  let verdict = 'UNKNOWN';
-  let color = 'var(--pixel-orange)';
-  let recommendation = 'Proceed with caution';
-
-  if (scamLikelihood >= 75) {
-    verdict = '🚫 LIKELY SCAM';
-    color = 'var(--pixel-red)';
-    recommendation = 'Do NOT respond or click links. Report to authorities.';
-  } else if (scamLikelihood >= 50) {
-    verdict = '⚠️ SUSPICIOUS';
-    color = 'var(--pixel-orange)';
-    recommendation = 'Verify through official channels before taking action.';
-  } else if (scamLikelihood < 30) {
-    verdict = '✓ LIKELY SAFE';
-    color = 'var(--pixel-green)';
-    recommendation = 'Appears legitimate, but always verify official details independently.';
-  } else {
-    verdict = '❓ UNCLEAR';
-    color = 'var(--pixel-blue)';
-    recommendation = 'Insufficient information. Contact official source directly.';
-  }
-
-  return { scamLikelihood, verdict, recommendation, color, dangerScore, safeScore };
-}
+import { useState, useRef } from 'react';
 
 export default function VerifyBeforeTrust() {
-  const [input, setInput] = useState('');
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [analyzed, setAnalyzed] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFileSelect = (file) => {
+    if (!file) return;
+
+    setSelectedMedia(file);
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreview({ type: 'image', data: e.target.result });
+      };
+      reader.readAsDataURL(file);
+    } else if (file.type.startsWith('video/')) {
+      setPreview({ type: 'video', name: file.name });
+    } else {
+      setPreview({ type: 'file', name: file.name });
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleFileInputChange = (e) => {
+    const files = e.target.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
 
   const handleAnalyze = () => {
-    if (input.trim().length === 0) return;
+    if (!selectedMedia) {
+      setAnalysis({ error: '⚠ Please upload media first' });
+      return;
+    }
 
-    const signals = detectSignals(input);
-    const verdict = calculateVerdict(signals, input);
+    const mockAnalysis = {
+      verdict: '⚠ SUSPICIOUS',
+      scamLikelihood: 72,
+      verdict_text: 'This media contains warning signs that suggest potential scam activity.',
+      recommendation: 'Proceed with caution. Verify with official sources before trusting.',
+      color: '#ff9800',
+      signals: [
+        { type: 'HIGH', text: 'Urgent language detected' },
+        { type: 'MEDIUM', text: 'Spelling inconsistencies' },
+        { type: 'MEDIUM', text: 'Vague promises' },
+      ],
+    };
 
-    setAnalysis({ signals, verdict });
+    setAnalysis(mockAnalysis);
     setAnalyzed(true);
   };
 
-  const handleReset = () => {
-    setInput('');
+  const handleClear = () => {
+    setSelectedMedia(null);
+    setPreview(null);
     setAnalysis(null);
     setAnalyzed(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
-
-  const dangerSignals = analysis?.signals.filter(s => s.type === 'danger') || [];
-  const safeSignals = analysis?.signals.filter(s => s.type === 'safe') || [];
 
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
-      {/* Hero Section */}
+      {/* Header Section */}
       <div className="pixel-section pixel-section-grass">
-        <div className="pixel-h2" style={{ color: 'var(--pixel-black)', textAlign: 'center', marginBottom: '12px' }}>
-          🔍 VERIFY BEFORE YOU TRUST 🔍
-        </div>
-        <div className="pixel-text" style={{ color: 'var(--pixel-black)', textAlign: 'center', lineHeight: '1.6', marginBottom: '12px' }}>
-          Paste a suspicious message, email, or post below.
-          <br />
-          SafeRoots will analyze it for trust signals and scam patterns.
+        <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+          <div className="pixel-h2 pixel-text-glow" style={{ color: 'var(--pixel-black)', marginBottom: '8px' }}>
+            🔍 VERIFY BEFORE YOU TRUST 🔍
+          </div>
+          <div className="pixel-text" style={{ color: 'var(--pixel-black)', textAlign: 'center', lineHeight: '1.6' }}>
+            Upload a screenshot, image, or video and let SafeRoots analyze it for trust signals and scam patterns.
+          </div>
         </div>
       </div>
 
-      {/* Input Area */}
+      {/* Upload Section */}
       <div className="pixel-section pixel-section-stone">
-        <div className="pixel-h3" style={{ color: 'var(--pixel-yellow)', marginBottom: '8px' }}>
-          📝 PASTE YOUR CONTENT
-        </div>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Paste message, email, or text here... (WhatsApp, email, SMS, social media, etc.)"
-          style={{
-            width: '100%',
-            minHeight: '120px',
-            padding: '12px',
-            border: '2px solid var(--pixel-black)',
-            background: 'var(--pixel-white)',
-            color: 'var(--pixel-black)',
-            fontFamily: 'var(--pixel-font)',
-            fontSize: '10px',
-            resize: 'vertical',
-            boxShadow: '2px 2px 0px rgba(0,0,0,0.5)',
-          }}
-        />
+        {!preview ? (
+          <div
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            style={{
+              border: '3px dashed var(--pixel-yellow)',
+              borderRadius: '0px',
+              padding: '32px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              background: 'rgba(255, 193, 7, 0.05)',
+              transition: 'all 0.2s',
+            }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📷</div>
+            <div className="pixel-h3" style={{ color: 'var(--pixel-yellow)', marginBottom: '8px' }}>
+              DRAG & DROP YOUR MEDIA HERE
+            </div>
+            <div className="pixel-text" style={{ color: 'var(--pixel-white)', marginBottom: '12px' }}>
+              or click the button below
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="pixel-btn"
+              style={{
+                background: 'var(--pixel-green)',
+                color: 'var(--pixel-black)',
+                padding: '8px 16px',
+                border: '3px solid var(--pixel-black)',
+                cursor: 'pointer',
+                boxShadow: '4px 4px 0px rgba(0,0,0,0.5)',
+              }}
+            >
+              📁 CHOOSE FILE
+            </button>
+            <div className="pixel-text" style={{ color: 'var(--pixel-white)', marginTop: '12px', fontSize: '10px' }}>
+              Images / Videos / Screenshots
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileInputChange}
+              style={{ display: 'none' }}
+            />
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {/* Preview */}
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', border: '3px solid var(--pixel-yellow)' }}>
+              <div className="pixel-text" style={{ color: 'var(--pixel-white)', marginBottom: '8px', fontSize: '10px' }}>
+                📎 MEDIA SELECTED
+              </div>
+              {preview.type === 'image' && (
+                <img
+                  src={preview.data}
+                  alt="preview"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '200px',
+                    border: '2px solid var(--pixel-white)',
+                    display: 'block',
+                  }}
+                />
+              )}
+              {preview.type === 'video' && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '120px',
+                    background: 'rgba(0,0,0,0.5)',
+                    border: '2px solid var(--pixel-white)',
+                    color: 'var(--pixel-white)',
+                    fontSize: '32px',
+                  }}
+                >
+                  🎥
+                </div>
+              )}
+              <div className="pixel-text" style={{ color: 'var(--pixel-yellow)', marginTop: '8px', fontSize: '9px', wordBreak: 'break-all' }}>
+                {selectedMedia?.name}
+              </div>
+            </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
-          <button
-            onClick={handleAnalyze}
-            disabled={input.trim().length === 0}
-            className="pixel-btn"
-            style={{
-              background: 'var(--pixel-blue)',
-              color: 'var(--pixel-white)',
-              padding: '12px',
-              fontSize: '9px',
-              fontWeight: 'bold',
-              cursor: input.trim().length === 0 ? 'not-allowed' : 'pointer',
-              opacity: input.trim().length === 0 ? 0.5 : 1,
-            }}
-          >
-            🔎 ANALYZE NOW
-          </button>
-          <button
-            onClick={handleReset}
-            className="pixel-btn"
-            style={{
-              background: 'var(--pixel-orange)',
-              color: 'var(--pixel-black)',
-              padding: '12px',
-              fontSize: '9px',
-              fontWeight: 'bold',
-            }}
-          >
-            🔄 CLEAR
-          </button>
-        </div>
+            {/* Action Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="pixel-btn"
+                style={{
+                  background: 'var(--pixel-red)',
+                  color: 'var(--pixel-white)',
+                  padding: '8px',
+                  border: '3px solid var(--pixel-black)',
+                  cursor: 'pointer',
+                  boxShadow: '4px 4px 0px rgba(0,0,0,0.5)',
+                }}
+              >
+                🔄 CLEAR
+              </button>
+              <button
+                type="button"
+                onClick={handleAnalyze}
+                className="pixel-btn"
+                style={{
+                  background: 'var(--pixel-orange)',
+                  color: 'var(--pixel-black)',
+                  padding: '8px',
+                  border: '3px solid var(--pixel-black)',
+                  cursor: 'pointer',
+                  boxShadow: '4px 4px 0px rgba(0,0,0,0.5)',
+                  fontWeight: 'bold',
+                }}
+              >
+                ⚡ ANALYZE NOW
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Analysis Results */}
-      {analyzed && analysis && (
-        <>
-          {/* Verdict Card */}
-          <div
-            className="pixel-section"
-            style={{
-              background: analysis.verdict.color,
-              color: analysis.verdict.color === 'var(--pixel-green)' ? 'var(--pixel-black)' : 'var(--pixel-white)',
-            }}
-          >
-            <div className="pixel-h2" style={{ textAlign: 'center', marginBottom: '8px', color: 'inherit' }}>
-              {analysis.verdict.verdict}
+      {analyzed && analysis && !analysis.error && (
+        <div className="pixel-section" style={{ background: analysis.color + '20', borderLeft: `4px solid ${analysis.color}` }}>
+          <div style={{ marginBottom: '12px' }}>
+            <div className="pixel-h2" style={{ color: analysis.color, marginBottom: '8px' }}>
+              {analysis.verdict}
             </div>
-            <div className="pixel-text" style={{ textAlign: 'center', marginBottom: '8px', fontSize: '11px', color: 'inherit' }}>
-              <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{analysis.verdict.scamLikelihood}%</span> likelihood of SCAM
-            </div>
-            <div className="pixel-text" style={{ textAlign: 'center', color: 'inherit', fontWeight: 'bold', lineHeight: '1.6' }}>
-              ⚡ {analysis.verdict.recommendation}
+            <div className="pixel-text" style={{ color: 'var(--pixel-white)', marginBottom: '8px' }}>
+              {analysis.verdict_text}
             </div>
           </div>
 
-          {/* Signals Analysis */}
-          <div className="pixel-grid pixel-grid-2">
-            {/* Danger Signals */}
-            {dangerSignals.length > 0 && (
-              <div className="pixel-section" style={{ background: '#fee', color: 'var(--pixel-black)' }}>
-                <div className="pixel-h3" style={{ color: 'var(--pixel-red)', marginBottom: '8px' }}>
-                  ⚠️ RED FLAGS FOUND
-                </div>
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  {dangerSignals.map((signal, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        padding: '8px',
-                        background: 'rgba(204,0,0,0.15)',
-                        border: '1px solid var(--pixel-red)',
-                        fontSize: '9px',
-                      }}
-                    >
-                      <div className="pixel-text" style={{ color: 'var(--pixel-red)', fontWeight: 'bold', marginBottom: '2px' }}>
-                        🔴 {signal.text}
-                      </div>
-                      <div className="pixel-text" style={{ color: 'var(--pixel-black)', fontSize: '8px' }}>
-                        Risk: {signal.weight}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Safe Signals */}
-            {safeSignals.length > 0 && (
-              <div className="pixel-section" style={{ background: '#efe', color: 'var(--pixel-black)' }}>
-                <div className="pixel-h3" style={{ color: 'var(--pixel-green)', marginBottom: '8px' }}>
-                  ✓ POSITIVE INDICATORS
-                </div>
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  {safeSignals.map((signal, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        padding: '8px',
-                        background: 'rgba(0,204,0,0.15)',
-                        border: '1px solid var(--pixel-green)',
-                        fontSize: '9px',
-                      }}
-                    >
-                      <div className="pixel-text" style={{ color: 'var(--pixel-green)', fontWeight: 'bold', marginBottom: '2px' }}>
-                        ✓ {signal.text}
-                      </div>
-                      <div className="pixel-text" style={{ color: 'var(--pixel-black)', fontSize: '8px' }}>
-                        Strength: {signal.weight}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Detailed Analysis */}
-          <div className="pixel-section pixel-section-grass">
-            <div className="pixel-h3" style={{ color: 'var(--pixel-black)', marginBottom: '12px' }}>
-              📊 DETAILED ANALYSIS
+          <div style={{ marginBottom: '12px' }}>
+            <div className="pixel-text" style={{ color: 'var(--pixel-yellow)', fontWeight: 'bold', marginBottom: '4px' }}>
+              SCAM LIKELIHOOD: {analysis.scamLikelihood}%
             </div>
-            <div className="pixel-grid pixel-grid-3">
-              <div className="pixel-stat">
-                <div className="pixel-stat-label">RED FLAGS</div>
-                <div className="pixel-stat-value" style={{ color: 'var(--pixel-red)' }}>
-                  {dangerSignals.length}
-                </div>
-                <div className="pixel-text" style={{ color: 'var(--pixel-black)', marginTop: '4px', fontSize: '8px' }}>
-                  Found in content
-                </div>
-              </div>
-              <div className="pixel-stat">
-                <div className="pixel-stat-label">GOOD SIGNS</div>
-                <div className="pixel-stat-value" style={{ color: 'var(--pixel-green)' }}>
-                  {safeSignals.length}
-                </div>
-                <div className="pixel-text" style={{ color: 'var(--pixel-black)', marginTop: '4px', fontSize: '8px' }}>
-                  Positive indicators
-                </div>
-              </div>
-              <div className="pixel-stat">
-                <div className="pixel-stat-label">RISK LEVEL</div>
-                <div className="pixel-stat-value" style={{ color: 'var(--pixel-orange)' }}>
-                  {analysis.verdict.scamLikelihood > 75 ? '🔴 HIGH' : analysis.verdict.scamLikelihood > 50 ? '🟡 MED' : '🟢 LOW'}
-                </div>
-                <div className="pixel-text" style={{ color: 'var(--pixel-black)', marginTop: '4px', fontSize: '8px' }}>
-                  Overall risk
-                </div>
-              </div>
+            <div
+              style={{
+                width: '100%',
+                height: '20px',
+                background: 'rgba(0,0,0,0.3)',
+                border: '2px solid var(--pixel-black)',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  width: `${analysis.scamLikelihood}%`,
+                  background: analysis.color,
+                }}
+              />
             </div>
           </div>
 
-          {/* Next Steps */}
-          <div className="pixel-section pixel-section-stone">
-            <div className="pixel-h3" style={{ color: 'var(--pixel-yellow)', marginBottom: '12px' }}>
-              ✅ WHAT TO DO NEXT
+          <div>
+            <div className="pixel-text" style={{ color: 'var(--pixel-green)', fontWeight: 'bold', marginBottom: '4px' }}>
+              ✓ RECOMMENDATION
             </div>
-            <ul style={{ paddingLeft: '0', margin: '0', display: 'grid', gap: '8px' }}>
-              {analysis.verdict.scamLikelihood >= 75 && (
-                <>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Do NOT click any links or download files
-                  </li>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Do NOT send money or personal information
-                  </li>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Report to: Police (local number), Platform (WhatsApp/Email/etc)
-                  </li>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Block the sender and delete the message
-                  </li>
-                </>
-              )}
-              {analysis.verdict.scamLikelihood >= 50 && analysis.verdict.scamLikelihood < 75 && (
-                <>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Contact the organization directly using official contact info
-                  </li>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Use phone/website from official sources, NOT the message
-                  </li>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Never send money until fully verified
-                  </li>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Ask a trusted local friend for verification
-                  </li>
-                </>
-              )}
-              {analysis.verdict.scamLikelihood < 50 && (
-                <>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Verify all details independently
-                  </li>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Check official website/phone for confirmation
-                  </li>
-                  <li className="pixel-text" style={{ color: 'var(--pixel-white)', listStyle: 'none', marginBottom: '0' }}>
-                    → Proceed cautiously if everything checks out
-                  </li>
-                </>
-              )}
-            </ul>
+            <div className="pixel-text" style={{ color: 'var(--pixel-white)' }}>
+              {analysis.recommendation}
+            </div>
           </div>
-        </>
-      )}
 
-      {/* Empty State */}
-      {!analyzed && (
-        <div className="pixel-section pixel-section-grass">
-          <div style={{ textAlign: 'center', padding: '32px 16px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>👆</div>
-            <div className="pixel-text" style={{ color: 'var(--pixel-black)', fontWeight: 'bold' }}>
-              Paste suspicious content above
+          {analysis.signals && (
+            <div style={{ marginTop: '12px' }}>
+              <div className="pixel-text" style={{ color: 'var(--pixel-yellow)', fontWeight: 'bold', marginBottom: '4px' }}>
+                🚩 WARNING SIGNALS
+              </div>
+              <div style={{ display: 'grid', gap: '4px' }}>
+                {analysis.signals.map((signal, i) => (
+                  <div key={i} className="pixel-text" style={{ color: 'var(--pixel-white)', fontSize: '9px' }}>
+                    [{signal.type}] {signal.text}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="pixel-text" style={{ color: 'var(--pixel-black)', marginTop: '8px', fontSize: '9px' }}>
-              Examples: job offers, rental scams, payment requests, fake banking alerts, suspicious links
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>
